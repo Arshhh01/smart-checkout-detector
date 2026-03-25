@@ -6,32 +6,41 @@ export default function AlertList({ alerts, onReview }) {
     unclear: "bg-yellow-900 text-yellow-300",
   };
 
+  const unreviewed = alerts.filter((a) => a.review_status === "unreviewed").length;
+
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-lg flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
         <span className="text-xs text-gray-400 tracking-widest uppercase">Alert History</span>
-        <span className="text-xs bg-red-900 text-red-300 px-2 py-0.5 rounded-full">
-          {alerts.filter((a) => a.review_status === "unreviewed").length} new
-        </span>
+        {unreviewed > 0 && (
+          <span className="text-xs bg-red-900 text-red-300 px-2 py-0.5 rounded-full">
+            {unreviewed} new
+          </span>
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto divide-y divide-gray-800" style={{ maxHeight: "520px" }}>
+      <div className="flex-1 overflow-y-auto divide-y divide-gray-800" style={{ maxHeight: "580px" }}>
         {alerts.length === 0 ? (
           <div className="p-6 text-center text-gray-600 text-sm">
-            No alerts yet
+            No alerts yet — system is monitoring
           </div>
         ) : (
           alerts.map((alert) => (
-            <div key={alert.id} className="p-3 hover:bg-gray-800 transition-colors">
+            <div
+              key={alert.id}
+              className={`p-3 hover:bg-gray-800 transition-colors ${
+                alert.is_alert && alert.review_status === "unreviewed"
+                  ? "border-l-2 border-red-500"
+                  : ""
+              }`}
+            >
               {/* Alert header */}
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between mb-1.5">
                 <div>
                   <span className="text-sm font-bold text-white capitalize">
                     {alert.object_class}
                   </span>
-                  <span className="text-xs text-gray-500 ml-2">
-                    #{alert.track_id}
-                  </span>
+                  <span className="text-xs text-gray-500 ml-2">#{alert.track_id}</span>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[alert.review_status]}`}>
                   {alert.review_status}
@@ -40,9 +49,28 @@ export default function AlertList({ alerts, onReview }) {
 
               {/* Alert details */}
               <div className="text-xs text-gray-500 mb-2 space-y-0.5">
-                <div>Zone: <span className="text-gray-300">{alert.zone}</span></div>
-                <div>Confidence: <span className="text-gray-300">{(alert.confidence * 100).toFixed(0)}%</span></div>
-                <div>Time: <span className="text-gray-300">{new Date(alert.timestamp).toLocaleTimeString()}</span></div>
+                <div>
+                  Zone: <span className="text-gray-300">{alert.zone}</span>
+                </div>
+                <div>
+                  Confidence:{" "}
+                  <span className="text-gray-300">
+                    {(alert.confidence * 100).toFixed(0)}%
+                  </span>
+                </div>
+                {alert.timestamp && !alert.timestamp.includes("Invalid") && (
+                  <div>
+                    Time:{" "}
+                    <span className="text-gray-300">
+                      {new Date(alert.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
+                {alert.alert_reason && (
+                  <div className="text-red-400 text-xs truncate" title={alert.alert_reason}>
+                    {alert.alert_reason}
+                  </div>
+                )}
               </div>
 
               {/* Review buttons */}

@@ -1,1 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+checkout.db
+*.db
+
+# Node
+node_modules/
+dist/
+
+# OS
 .DS_Store
