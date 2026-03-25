@@ -1,0 +1,5 @@
+# Local detector requirements (your laptop)
+ultralytics>=8.3.0     # YOLOv8 + ByteTrack built in
+opencv-python>=4.10.0
+requests>=2.32.0
+numpy>=1.26.0
