@@ -48,15 +48,18 @@ async def save_detection(db: AsyncSession, payload: DetectionCreate) -> Detectio
         recent_alert = await _get_recent_alert(db, payload.camera_id)
         if not recent_alert:
             alert = await _create_alert_from_detection(db, payload, filtered_objects)
-            # Broadcast alert to all dashboard browsers
+            # Broadcast alert event to all dashboard browsers
             await manager.broadcast({
                 "type": "alert",
                 "data": {
                     "id": alert.id,
                     "camera_id": alert.camera_id,
                     "reason": alert.reason,
+                    "alert_reason": alert.reason,       # ← frontend reads this key
                     "objects": alert.objects,
                     "confidence": alert.confidence,
+                    "bbox": alert.bbox,
+                    "is_alert": True,
                     "created_at": alert.created_at.isoformat(),
                 }
             })
@@ -70,6 +73,7 @@ async def save_detection(db: AsyncSession, payload: DetectionCreate) -> Detectio
             "scan_zone_items": payload.scan_zone_items,
             "bag_zone_items": payload.bag_zone_items,
             "is_alert": payload.is_alert,
+            "alert_reason": payload.alert_reason,   # ← THIS WAS MISSING
             "fps": payload.fps,
             "timestamp": payload.timestamp,
         }
@@ -109,10 +113,16 @@ async def _create_alert_from_detection(
         if suspicious else 1.0
     )
 
+    # Get the bounding box of the first suspicious object for the alert record
+    alert_bbox = None
+    if suspicious:
+        alert_bbox = suspicious[0].get("bbox")
+
     alert = Alert(
         camera_id=payload.camera_id,
         reason=payload.alert_reason,
         objects=suspicious or filtered_objects,
+        bbox=alert_bbox,
         confidence=round(avg_confidence, 3),
     )
     db.add(alert)
