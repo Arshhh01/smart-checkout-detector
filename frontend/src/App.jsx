@@ -143,7 +143,8 @@ export default function App() {
               confidence: data.objects?.[0]?.confidence ?? 0.9,
               timestamp: parseTimestamp(data.timestamp),
               alert_reason: data.alert_reason,
-              dwellFrames: "8+",
+              severity: data.severity || "low",
+              dwellFrames: data.dwell_count || 3,
             },
             ...prev,
           ].slice(0, 5);
@@ -167,6 +168,7 @@ export default function App() {
               bbox: data.objects?.[0]?.bbox ?? [0, 0, 50, 50],
               is_alert: true,
               alert_reason: data.alert_reason,
+              severity: data.severity || "low",
               review_status: "unreviewed",
             },
             ...prev,

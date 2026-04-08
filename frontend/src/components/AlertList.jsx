@@ -36,11 +36,20 @@ export default function AlertList({ alerts, onReview }) {
             >
               {/* Alert header */}
               <div className="flex items-start justify-between mb-1.5">
-                <div>
+                <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-white capitalize">
                     {alert.object_class}
                   </span>
-                  <span className="text-xs text-gray-500 ml-2">#{alert.track_id}</span>
+                  <span className="text-xs text-gray-500">#{alert.track_id}</span>
+                  {alert.severity && (
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      alert.severity === "high" ? "bg-red-900 text-red-300" :
+                      alert.severity === "medium" ? "bg-yellow-900 text-yellow-300" :
+                      "bg-blue-900 text-blue-300"
+                    }`}>
+                      {alert.severity}
+                    </span>
+                  )}
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[alert.review_status]}`}>
                   {alert.review_status}

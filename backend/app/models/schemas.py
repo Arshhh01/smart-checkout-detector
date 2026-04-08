@@ -32,6 +32,8 @@ class DetectionCreate(BaseModel):
     bag_zone_items: List[int] = []       # track_ids currently in bag zone
     is_alert: bool = False
     alert_reason: Optional[str] = None
+    severity: Optional[str] = None           # "low" | "medium" | "high"
+    dwell_count: Optional[int] = None        # frames object has been in bag zone
     scanned_items: List[dict] = []       # items that were scanned before bagging (cleared)
     inference_ms: Optional[float] = None
     fps: Optional[float] = None

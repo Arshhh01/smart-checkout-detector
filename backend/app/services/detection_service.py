@@ -74,6 +74,8 @@ async def save_detection(db: AsyncSession, payload: DetectionCreate) -> Detectio
             "bag_zone_items": payload.bag_zone_items,
             "is_alert": payload.is_alert,
             "alert_reason": payload.alert_reason,
+            "severity": payload.severity,
+            "dwell_count": payload.dwell_count,
             "scanned_items": payload.scanned_items,
             "fps": payload.fps,
             "timestamp": payload.timestamp,
