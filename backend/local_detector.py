@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("API_KEY", "change-me")
-CLOUD_API_URL = "https://smart-checkout-detector.onrender.com/detections/"
+CLOUD_API_URL = "http://localhost:8000/detections/"
 CAMERA_ID = "cam_0"
-CAMERA_INDEX = 0         
-PUSH_EVERY_N_FRAMES = 2   # push every frame for faster cleared item detection
-SHOW_PREVIEW = True       # f for headless server mode
+CAMERA_INDEX = 0          # 0 = default webcam
+PUSH_EVERY_N_FRAMES = 1   # push every frame for faster cleared item detection
+SHOW_PREVIEW = True       # set False for headless server mode
 CONFIDENCE_THRESHOLD = 0.35  # lowered to detect more objects
 
 # Only detect product-like objects — ignore people, furniture, background
@@ -35,8 +35,8 @@ SCAN_MEMORY_TTL = 45  # ~1.5 seconds at 30fps
 # Zone polygons - pixel coordinates on your camera frame
 # Adjust by running with SHOW_PREVIEW=True and noting coords
 # Format: np.array([[x1,y1],[x2,y2],[x3,y3],[x4,y4]])
-SCAN_ZONE = np.array([[30, 80], [580, 80], [580, 650], [30, 650]])
-BAG_ZONE  = np.array([[620, 80], [1250, 80], [1250, 650], [620, 650]])
+SCAN_ZONE = np.array([[45, 120], [870, 120], [870, 975], [45, 975]])
+BAG_ZONE  = np.array([[930, 120], [1875, 120], [1875, 975], [930, 975]])
 
 
 def point_in_polygon(point: tuple, polygon: np.ndarray) -> bool: #zone logic starts here

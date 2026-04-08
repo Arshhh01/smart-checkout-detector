@@ -1,14 +1,14 @@
 import { useEffect, useRef } from "react";
 
-const SCALE_X = 560 / 1280;
-const SCALE_Y = 320 / 720;
+const SCALE_X = 560 / 1920;
+const SCALE_Y = 320 / 1080;
 
 function scaleZone(points) {
   return points.map(([x, y]) => [x * SCALE_X, y * SCALE_Y]);
 }
 
-const SCAN_ZONE_SCALED = scaleZone([[30, 80], [580, 80], [580, 650], [30, 650]]);
-const BAG_ZONE_SCALED  = scaleZone([[620, 80], [1250, 80], [1250, 650], [620, 650]]);
+const SCAN_ZONE_SCALED = scaleZone([[45, 120], [870, 120], [870, 975], [45, 975]]);
+const BAG_ZONE_SCALED  = scaleZone([[930, 120], [1875, 120], [1875, 975], [930, 975]]);
 
 function drawPolygon(ctx, points, strokeColor, fillColor, label) {
   ctx.beginPath();
@@ -40,7 +40,7 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
 
   useEffect(() => {
     navigator.mediaDevices
-      .getUserMedia({ video: { width: 1280, height: 720 } })
+      .getUserMedia({ video: { width: 1920, height: 1080 } })
       .then((stream) => {
         streamRef.current = stream;
         if (videoRef.current) {
