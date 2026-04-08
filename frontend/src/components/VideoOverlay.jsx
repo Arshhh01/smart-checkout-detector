@@ -7,8 +7,8 @@ function scaleZone(points) {
   return points.map(([x, y]) => [x * SCALE_X, y * SCALE_Y]);
 }
 
-const SCAN_ZONE_SCALED = scaleZone([[50, 150], [500, 150], [500, 600], [50, 600]]);
-const BAG_ZONE_SCALED  = scaleZone([[550, 100], [1200, 100], [1200, 650], [550, 650]]);
+const SCAN_ZONE_SCALED = scaleZone([[30, 80], [580, 80], [580, 650], [30, 650]]);
+const BAG_ZONE_SCALED  = scaleZone([[620, 80], [1250, 80], [1250, 650], [620, 650]]);
 
 function drawPolygon(ctx, points, strokeColor, fillColor, label) {
   ctx.beginPath();

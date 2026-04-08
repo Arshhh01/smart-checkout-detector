@@ -35,8 +35,8 @@ SCAN_MEMORY_TTL = 45  # ~1.5 seconds at 30fps
 # Zone polygons - pixel coordinates on your camera frame
 # Adjust by running with SHOW_PREVIEW=True and noting coords
 # Format: np.array([[x1,y1],[x2,y2],[x3,y3],[x4,y4]])
-SCAN_ZONE = np.array([[50, 150], [500, 150], [500, 600], [50, 600]])
-BAG_ZONE  = np.array([[550, 100], [1200, 100], [1200, 650], [550, 650]])
+SCAN_ZONE = np.array([[30, 80], [580, 80], [580, 650], [30, 650]])
+BAG_ZONE  = np.array([[620, 80], [1250, 80], [1250, 650], [620, 650]])
 
 
 def point_in_polygon(point: tuple, polygon: np.ndarray) -> bool: #zone logic starts here
