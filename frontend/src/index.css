@@ -10,19 +10,19 @@
 
 @layer utilities {
   .border {
-    border-width: 1.5px;
+    border-width: 2px;
   }
   .border-b {
-    border-bottom-width: 1.5px;
+    border-bottom-width: 2px;
   }
   .border-t {
-    border-top-width: 1.5px;
+    border-top-width: 2px;
   }
   .border-l {
-    border-left-width: 1.5px;
+    border-left-width: 2px;
   }
   .border-r {
-    border-right-width: 1.5px;
+    border-right-width: 2px;
   }
   .border-l-2 {
     border-left-width: 3px;
