@@ -34,12 +34,10 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
   const streamRef = useRef(null);
   const frameRef = useRef(currentFrame);
 
-  // Keep frameRef in sync without restarting the draw loop
   useEffect(() => {
     frameRef.current = currentFrame;
   }, [currentFrame]);
 
-  // Start webcam once
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({ video: { width: 1280, height: 720 } })
@@ -58,7 +56,6 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
     };
   }, []);
 
-  // Draw loop — runs continuously, reads latest frame from ref
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -68,7 +65,6 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
     function draw() {
       animRef.current = requestAnimationFrame(draw);
 
-      // Draw video
       if (video.readyState >= 2) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       } else {
@@ -76,11 +72,9 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Draw zones
       drawPolygon(ctx, SCAN_ZONE_SCALED, "rgba(59,130,246,0.9)", "rgba(59,130,246,0.06)", "SCAN ZONE");
       drawPolygon(ctx, BAG_ZONE_SCALED,  "rgba(234,179,8,0.9)",  "rgba(234,179,8,0.05)",  "BAG ZONE");
 
-      // Draw grid
       ctx.strokeStyle = "rgba(255,255,255,0.03)";
       ctx.lineWidth = 1;
       for (let gx = 0; gx < canvas.width; gx += 40) {
@@ -90,7 +84,6 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
         ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
       }
 
-      // Draw ONLY current frame's detections
       const frame = frameRef.current;
       if (frame && frame.objects) {
         frame.objects.forEach((obj) => {
@@ -131,7 +124,6 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
         });
       }
 
-      // Timestamp
       ctx.fillStyle = "rgba(255,255,255,0.5)";
       ctx.font = "10px monospace";
       ctx.fillText(new Date().toLocaleTimeString(), 8, canvas.height - 8);
@@ -163,11 +155,23 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
       <video ref={videoRef} className="hidden" muted playsInline />
       <canvas ref={canvasRef} width={560} height={320} className="w-full" />
 
-      <div className="px-4 py-2 border-t border-gray-800 flex gap-4 text-xs text-gray-500">
-        <span>🟦 Scan Zone</span>
-        <span>🟨 Bag Zone</span>
-        <span>🟩 Scanned</span>
-        <span>🟥 Alert</span>
+      <div className="px-4 py-2 border-t border-gray-800 flex gap-5 text-xs text-gray-500">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block" />
+          Scan Zone
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm bg-yellow-500 inline-block" />
+          Bag Zone
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block" />
+          Scanned
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" />
+          Alert
+        </span>
       </div>
     </div>
   );
