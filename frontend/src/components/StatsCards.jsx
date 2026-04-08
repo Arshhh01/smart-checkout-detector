@@ -1,9 +1,9 @@
 export default function StatsCards({ detectionCount, alertCount, unreviewedCount, fps, accuracy }) {
   const cards = [
     {
-      label: "Detections",
+      label: "Objects Tracked",
       value: detectionCount,
-      sub: "this session",
+      sub: "unique this session",
       accent: "border-l-blue-500",
       valueColor: "text-white",
       icon: (

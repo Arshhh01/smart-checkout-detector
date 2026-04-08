@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import useWebSocket from "./hooks/useWebSocket";
 import StatsCards from "./components/StatsCards";
 import AlertList from "./components/AlertList";
@@ -30,7 +30,6 @@ function parseTimestamp(ts) {
 
 export default function App() {
   const [currentFrame, setCurrentFrame] = useState(null);
-  const [detectionCount, setDetectionCount] = useState(0);
   const [alerts, setAlerts] = useState([]);
   const [activeThefts, setActiveThefts] = useState([]);
   const [clearedItems, setClearedItems] = useState([]);
@@ -43,11 +42,38 @@ export default function App() {
   );
   const [refreshing, setRefreshing] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const detectionCountRef = useRef(0);
+
+  // Unique object tracking — count distinct track_ids, not WS messages
+  const trackedIdsRef = useRef(new Set());
+  const [uniqueObjectCount, setUniqueObjectCount] = useState(0);
+
+  // Frame counter for charts
+  const frameCountRef = useRef(0);
+
   const theftTimersRef = useRef({});
   const sessionStartRef = useRef(Date.now());
 
+  // Track which track_ids already have an alert to prevent duplicates
+  const alertedTrackIdsRef = useRef(new Set());
+
   const { lastMessage, isConnected } = useWebSocket(WS_URL);
+
+  // Session reset — clears all state for a fresh demo
+  const resetSession = useCallback(() => {
+    setAlerts([]);
+    setActiveThefts([]);
+    setClearedItems([]);
+    setFps(0);
+    setFpsHistory(Array.from({ length: 30 }, (_, i) => ({ time: i, fps: 0 })));
+    setDetectionHistory(Array.from({ length: 30 }, (_, i) => ({ time: i, count: 0 })));
+    trackedIdsRef.current = new Set();
+    setUniqueObjectCount(0);
+    frameCountRef.current = 0;
+    alertedTrackIdsRef.current = new Set();
+    sessionStartRef.current = Date.now();
+    Object.values(theftTimersRef.current).forEach(clearTimeout);
+    theftTimersRef.current = {};
+  }, []);
 
   function fetchAlerts() {
     setRefreshing(true);
@@ -57,18 +83,22 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          const mapped = data.map((a) => ({
-            id: String(a.id),
-            timestamp: parseTimestamp(a.created_at || a.timestamp),
-            object_class: parseObjectClass(a.reason || a.alert_reason),
-            confidence: a.confidence ?? 0.9,
-            track_id: a.id ?? 0,
-            zone: "bag",
-            bbox: a.bbox ?? [0, 0, 50, 50],
-            is_alert: true,
-            alert_reason: a.reason || a.alert_reason,
-            review_status: a.reviewed ? (a.review_outcome ?? "confirmed") : "unreviewed",
-          }));
+          const sessionStartTime = new Date(sessionStartRef.current);
+          const mapped = data
+            .filter((a) => new Date(a.created_at || a.timestamp) >= sessionStartTime)
+            .map((a) => ({
+              id: String(a.id),
+              timestamp: parseTimestamp(a.created_at || a.timestamp),
+              object_class: parseObjectClass(a.reason || a.alert_reason),
+              confidence: a.confidence ?? 0.9,
+              track_id: a.id ?? 0,
+              zone: "bag",
+              bbox: a.bbox ?? [0, 0, 50, 50],
+              is_alert: true,
+              alert_reason: a.reason || a.alert_reason,
+              severity: "medium",
+              review_status: a.reviewed ? (a.review_outcome ?? "confirmed") : "unreviewed",
+            }));
           setAlerts(mapped);
         }
       })
@@ -84,10 +114,6 @@ export default function App() {
     if (!lastMessage) return;
     try {
       const parsed = JSON.parse(lastMessage);
-
-      // DEBUG — log every WS message
-      console.log("WS RAW:", JSON.stringify(parsed).slice(0, 400));
-
       if (parsed.type === "ping" || parsed.type === "connected") return;
 
       const data = (parsed.type === "detection" || parsed.type === "alert")
@@ -95,16 +121,21 @@ export default function App() {
         : parsed;
       if (!data) return;
 
-      // DEBUG — log unwrapped data
-      console.log("WS DATA:", JSON.stringify(data).slice(0, 400));
-      console.log("is_alert:", data.is_alert, "alert_reason:", data.alert_reason);
-
-      // Update current frame for VideoOverlay
       setCurrentFrame(data);
 
-      // Update detection count
-      detectionCountRef.current += 1;
-      setDetectionCount(detectionCountRef.current);
+      // Count unique objects tracked (not WS messages)
+      if (data.objects && data.objects.length > 0) {
+        let changed = false;
+        for (const obj of data.objects) {
+          if (obj.track_id != null && !trackedIdsRef.current.has(obj.track_id)) {
+            trackedIdsRef.current.add(obj.track_id);
+            changed = true;
+          }
+        }
+        if (changed) setUniqueObjectCount(trackedIdsRef.current.size);
+      }
+
+      frameCountRef.current += 1;
 
       // Track cleared items (scanned before bagging)
       if (data.scanned_items && data.scanned_items.length > 0) {
@@ -126,54 +157,86 @@ export default function App() {
         });
       }
 
-      // Handle live theft alerts
+      // Handle theft alerts — DEDUPLICATED by track_id
       if (data.is_alert && data.alert_reason) {
-        console.log("THEFT DETECTED:", data.alert_reason);
         const objClass = parseObjectClass(data.alert_reason);
         const trackId = data.objects?.[0]?.track_id ?? 0;
-        const theftId = `theft-${trackId}-${data.alert_reason}`;
+        const theftId = `theft-${trackId}`;
+        const newSeverity = data.severity || "low";
+        const newDwell = data.dwell_count || 3;
+        const newConfidence = data.objects?.[0]?.confidence ?? 0.9;
 
+        // Update or create active theft — escalate severity if higher
         setActiveThefts((prev) => {
-          if (prev.find((t) => t.id === theftId)) return prev;
+          const existing = prev.find((t) => t.id === theftId);
+          if (existing) {
+            const sevOrder = { low: 0, medium: 1, high: 2 };
+            const shouldUpdate =
+              (sevOrder[newSeverity] || 0) > (sevOrder[existing.severity] || 0) ||
+              newDwell > existing.dwellFrames ||
+              newConfidence > existing.confidence;
+            if (shouldUpdate) {
+              return prev.map((t) =>
+                t.id === theftId
+                  ? {
+                      ...t,
+                      severity: (sevOrder[newSeverity] || 0) >= (sevOrder[t.severity] || 0) ? newSeverity : t.severity,
+                      dwellFrames: Math.max(t.dwellFrames, newDwell),
+                      confidence: Math.max(t.confidence, newConfidence),
+                    }
+                  : t
+              );
+            }
+            return prev;
+          }
           return [
             {
               id: theftId,
               object_class: objClass,
               track_id: trackId,
-              confidence: data.objects?.[0]?.confidence ?? 0.9,
+              confidence: newConfidence,
               timestamp: parseTimestamp(data.timestamp),
               alert_reason: data.alert_reason,
-              severity: data.severity || "low",
-              dwellFrames: data.dwell_count || 3,
+              severity: newSeverity,
+              dwellFrames: newDwell,
             },
             ...prev,
           ].slice(0, 5);
         });
 
-        setAlerts((prev) => {
-          const exists = prev.find(
-            (a) =>
-              a.alert_reason === data.alert_reason &&
-              Math.abs(new Date(a.timestamp) - new Date(parseTimestamp(data.timestamp))) < 2000
-          );
-          if (exists) return prev;
-          return [
+        // ONE alert history entry per track_id — update severity if escalated
+        if (!alertedTrackIdsRef.current.has(trackId)) {
+          alertedTrackIdsRef.current.add(trackId);
+          setAlerts((prev) => [
             {
-              id: `live-${Date.now()}`,
+              id: `live-${trackId}-${Date.now()}`,
               timestamp: parseTimestamp(data.timestamp),
               object_class: objClass,
-              confidence: data.objects?.[0]?.confidence ?? 0.9,
+              confidence: newConfidence,
               track_id: trackId,
               zone: "bag",
               bbox: data.objects?.[0]?.bbox ?? [0, 0, 50, 50],
               is_alert: true,
               alert_reason: data.alert_reason,
-              severity: data.severity || "low",
+              severity: newSeverity,
               review_status: "unreviewed",
             },
             ...prev,
-          ].slice(0, 100);
-        });
+          ].slice(0, 100));
+        } else {
+          // Escalate existing alert severity
+          setAlerts((prev) =>
+            prev.map((a) => {
+              if (a.track_id === trackId && a.review_status === "unreviewed") {
+                const sevOrder = { low: 0, medium: 1, high: 2 };
+                if ((sevOrder[newSeverity] || 0) > (sevOrder[a.severity] || 0)) {
+                  return { ...a, severity: newSeverity, confidence: Math.max(a.confidence, newConfidence) };
+                }
+              }
+              return a;
+            })
+          );
+        }
 
         if (theftTimersRef.current[theftId]) clearTimeout(theftTimersRef.current[theftId]);
         theftTimersRef.current[theftId] = setTimeout(() => {
@@ -186,22 +249,20 @@ export default function App() {
       setFpsHistory((prev) => [...prev.slice(1), { time: Date.now(), fps: currentFps }]);
       setDetectionHistory((prev) => [
         ...prev.slice(1),
-        { time: Date.now(), count: detectionCountRef.current % 50 },
+        { time: Date.now(), count: uniqueObjectCount },
       ]);
     } catch (e) {
       console.error("Failed to parse WS message", e);
     }
-  }, [lastMessage]);
+  }, [lastMessage, uniqueObjectCount]);
 
   function handleTheftAccept(theftId) {
     const theft = activeThefts.find((t) => t.id === theftId);
     setActiveThefts((prev) => prev.filter((t) => t.id !== theftId));
     if (!theft) return;
-    // Match by track_id AND close timestamp — not alert_reason (which is the same for all items of the same class)
     setAlerts((prev) =>
       prev.map((a) => {
-        if (a.track_id === theft.track_id && Math.abs(new Date(a.timestamp) - new Date(theft.timestamp)) < 10000) {
-          // Also fire the PATCH to persist the review on the backend
+        if (a.track_id === theft.track_id) {
           if (typeof a.id === "number" || (typeof a.id === "string" && !a.id.startsWith("live-"))) {
             handleReview(a.id, "confirmed");
           }
@@ -218,7 +279,7 @@ export default function App() {
     if (!theft) return;
     setAlerts((prev) =>
       prev.map((a) => {
-        if (a.track_id === theft.track_id && Math.abs(new Date(a.timestamp) - new Date(theft.timestamp)) < 10000) {
+        if (a.track_id === theft.track_id) {
           if (typeof a.id === "number" || (typeof a.id === "string" && !a.id.startsWith("live-"))) {
             handleReview(a.id, "false-positive");
           }
@@ -235,7 +296,6 @@ export default function App() {
   }
 
   function handleReview(alertId, status) {
-    // Backend AlertReview schema expects: { outcome: "...", reviewed_by: "..." }
     fetch(`${API_URL}/alerts/${alertId}/review`, {
       method: "PATCH",
       headers: {
@@ -277,11 +337,10 @@ export default function App() {
             </span>
           )}
           <button
-            onClick={fetchAlerts}
-            disabled={refreshing}
-            className="text-xs px-3 py-1 rounded border border-gray-700 text-gray-400 hover:border-blue-500 hover:text-blue-400 transition-colors disabled:opacity-40"
+            onClick={resetSession}
+            className="text-xs px-3 py-1 rounded border border-gray-700 text-gray-400 hover:border-green-500 hover:text-green-400 transition-colors"
           >
-            {refreshing ? "Refreshing..." : "Refresh Alerts"}
+            New Session
           </button>
           <button
             onClick={() => setShowSummary(true)}
@@ -300,7 +359,7 @@ export default function App() {
 
       <main className="p-6 space-y-6">
         <StatsCards
-          detectionCount={detectionCount}
+          detectionCount={uniqueObjectCount}
           alertCount={alerts.length}
           unreviewedCount={unreviewed}
           fps={fps}
@@ -352,7 +411,7 @@ export default function App() {
         <SessionSummary
           alerts={alerts}
           clearedItems={clearedItems}
-          detectionCount={detectionCount}
+          detectionCount={uniqueObjectCount}
           sessionStart={sessionStartRef.current}
           onClose={() => setShowSummary(false)}
         />
