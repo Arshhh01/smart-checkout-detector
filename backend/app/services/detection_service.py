@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 async def save_detection(db: AsyncSession, payload: DetectionCreate) -> Detection:
     """
-    Persist detection frame to DB.
-    If is_alert=True, also create an Alert row and broadcast to dashboard.
+    Broadcast every frame via WebSocket for live dashboard.
+    Only persist to DB if it's an alert or has scanned (cleared) items.
     """
     # Filter out low-confidence detections before saving
     filtered_objects = [
@@ -29,21 +29,27 @@ async def save_detection(db: AsyncSession, payload: DetectionCreate) -> Detectio
         if obj.confidence >= settings.CONFIDENCE_THRESHOLD
     ]
 
-    detection = Detection(
-        camera_id=payload.camera_id,
-        objects_detected=filtered_objects,
-        scan_zone_items=payload.scan_zone_items,
-        bag_zone_items=payload.bag_zone_items,
-        is_alert=payload.is_alert,
-        alert_reason=payload.alert_reason,
-        inference_ms=payload.inference_ms,
-        fps=payload.fps,
-    )
-    db.add(detection)
-    await db.flush()  # get the ID without committing yet
+    has_alert = payload.is_alert and payload.alert_reason
+    has_scanned = len(payload.scanned_items) > 0
+
+    # Only write to DB for meaningful events (alerts or cleared items)
+    detection = None
+    if has_alert or has_scanned:
+        detection = Detection(
+            camera_id=payload.camera_id,
+            objects_detected=filtered_objects,
+            scan_zone_items=payload.scan_zone_items,
+            bag_zone_items=payload.bag_zone_items,
+            is_alert=payload.is_alert,
+            alert_reason=payload.alert_reason,
+            inference_ms=payload.inference_ms,
+            fps=payload.fps,
+        )
+        db.add(detection)
+        await db.flush()
 
     # If this frame flagged an alert, create the Alert record too
-    if payload.is_alert and payload.alert_reason:
+    if has_alert:
         # Cooldown check: don't create duplicate alert if one was just fired
         recent_alert = await _get_recent_alert(db, payload.camera_id)
         if not recent_alert:
@@ -55,7 +61,7 @@ async def save_detection(db: AsyncSession, payload: DetectionCreate) -> Detectio
                     "id": alert.id,
                     "camera_id": alert.camera_id,
                     "reason": alert.reason,
-                    "alert_reason": alert.reason,       # ← frontend reads this key
+                    "alert_reason": alert.reason,
                     "objects": alert.objects,
                     "confidence": alert.confidence,
                     "bbox": alert.bbox,
@@ -64,7 +70,7 @@ async def save_detection(db: AsyncSession, payload: DetectionCreate) -> Detectio
                 }
             })
 
-    # Broadcast the detection frame (for live video overlay on dashboard)
+    # Always broadcast every frame via WebSocket for live dashboard
     await manager.broadcast({
         "type": "detection",
         "data": {
@@ -79,6 +85,20 @@ async def save_detection(db: AsyncSession, payload: DetectionCreate) -> Detectio
             "timestamp": payload.timestamp,
         }
     })
+
+    # Return a transient Detection object for non-stored frames
+    if detection is None:
+        detection = Detection(
+            id=0,
+            camera_id=payload.camera_id,
+            objects_detected=filtered_objects,
+            scan_zone_items=payload.scan_zone_items,
+            bag_zone_items=payload.bag_zone_items,
+            is_alert=False,
+            alert_reason=None,
+            inference_ms=payload.inference_ms,
+            fps=payload.fps,
+        )
 
     return detection
 
