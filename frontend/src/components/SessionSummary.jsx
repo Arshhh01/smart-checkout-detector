@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 
 const MOCK_PRICES = {
-  "cell phone": 999.99,
+  "cell phone": 120.99,
   bottle: 2.49,
   cup: 4.99,
   bowl: 6.99,
