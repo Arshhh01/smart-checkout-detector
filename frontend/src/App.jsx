@@ -7,6 +7,7 @@ import VideoOverlay from "./components/VideoOverlay";
 import TheftAlertPanel from "./components/TheftAlertPanel";
 import ClearedItemsPanel from "./components/ClearedItemsPanel";
 import POSPanel from "./components/POSPanel";
+import SessionSummary from "./components/SessionSummary";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const API_KEY = import.meta.env.VITE_API_KEY || "Godofwar12";
@@ -41,8 +42,10 @@ export default function App() {
     Array.from({ length: 30 }, (_, i) => ({ time: i, count: 0 }))
   );
   const [refreshing, setRefreshing] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
   const detectionCountRef = useRef(0);
   const theftTimersRef = useRef({});
+  const sessionStartRef = useRef(Date.now());
 
   const { lastMessage, isConnected } = useWebSocket(WS_URL);
 
@@ -278,6 +281,12 @@ export default function App() {
           >
             {refreshing ? "Refreshing..." : "Refresh Alerts"}
           </button>
+          <button
+            onClick={() => setShowSummary(true)}
+            className="text-xs px-3 py-1 rounded border border-yellow-700 text-yellow-400 hover:bg-yellow-900/30 transition-colors"
+          >
+            End Shift
+          </button>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-400 animate-pulse" : "bg-red-500"}`} />
             <span className="text-xs text-gray-400">
@@ -336,6 +345,16 @@ export default function App() {
           </div>
         </div>
       </main>
+
+      {showSummary && (
+        <SessionSummary
+          alerts={alerts}
+          clearedItems={clearedItems}
+          detectionCount={detectionCount}
+          sessionStart={sessionStartRef.current}
+          onClose={() => setShowSummary(false)}
+        />
+      )}
     </div>
   );
 }
