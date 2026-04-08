@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("API_KEY", "change-me")
-CLOUD_API_URL = "http://localhost:8000/detections/"
+CLOUD_API_URL = "https://smart-checkout-detector.onrender.com/detections/"
 CAMERA_ID = "cam_0"
 CAMERA_INDEX = 0         
 PUSH_EVERY_N_FRAMES = 2   # push every frame for faster cleared item detection
