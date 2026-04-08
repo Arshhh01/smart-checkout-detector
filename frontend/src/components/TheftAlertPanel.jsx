@@ -1,182 +1,57 @@
-const SEVERITY_CONFIG = {
-  high: {
-    border: "border-red-700",
-    headerBg: "bg-red-900/50",
-    headerBorder: "border-red-700",
-    dot: "bg-red-500",
-    badge: "bg-red-800 text-red-200",
-    label: "HIGH SEVERITY",
-    labelColor: "text-red-300",
-    reasonBg: "bg-red-950/50 border-red-800",
-    reasonText: "text-red-400",
-  },
-  medium: {
-    border: "border-yellow-700",
-    headerBg: "bg-yellow-900/30",
-    headerBorder: "border-yellow-700",
-    dot: "bg-yellow-500",
-    badge: "bg-yellow-800 text-yellow-200",
-    label: "MEDIUM SEVERITY",
-    labelColor: "text-yellow-300",
-    reasonBg: "bg-yellow-950/50 border-yellow-800",
-    reasonText: "text-yellow-400",
-  },
-  low: {
-    border: "border-blue-700",
-    headerBg: "bg-blue-900/20",
-    headerBorder: "border-blue-700",
-    dot: "bg-blue-500",
-    badge: "bg-blue-800 text-blue-200",
-    label: "LOW SEVERITY",
-    labelColor: "text-blue-300",
-    reasonBg: "bg-blue-950/50 border-blue-800",
-    reasonText: "text-blue-400",
-  },
+const SEV = {
+  high:   { bg: "bg-accent-red/8",  border: "border-l-accent-red",  text: "text-accent-red",  label: "High" },
+  medium: { bg: "bg-accent-yellow/8", border: "border-l-accent-yellow", text: "text-accent-yellow", label: "Medium" },
+  low:    { bg: "bg-accent-blue/8",  border: "border-l-accent-blue",  text: "text-accent-blue",  label: "Low" },
 };
 
 export default function TheftAlertPanel({ activeThefts, onAccept, onReject, onDismiss }) {
   if (activeThefts.length === 0) {
     return (
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 flex flex-col items-center justify-center gap-3 min-h-48">
-        <div className="w-10 h-10 rounded-full border-2 border-gray-700 flex items-center justify-center">
-          <span className="text-gray-600 text-lg">&#10003;</span>
-        </div>
-        <p className="text-xs text-gray-500 tracking-widest uppercase">No active theft alerts</p>
-        <p className="text-xs text-gray-600">System is monitoring</p>
+      <div className="bg-surface-1 rounded-lg p-5 text-center">
+        <p className="text-xs text-txt-muted">No active alerts</p>
+        <p className="text-xs text-txt-muted mt-0.5 opacity-50">System is monitoring</p>
       </div>
     );
   }
 
-  // Sort by severity: high first, then medium, then low
   const sortOrder = { high: 0, medium: 1, low: 2 };
-  const sorted = [...activeThefts].sort(
-    (a, b) => (sortOrder[a.severity] ?? 2) - (sortOrder[b.severity] ?? 2)
-  );
-
-  const highCount = sorted.filter((t) => t.severity === "high").length;
-  const medCount = sorted.filter((t) => t.severity === "medium").length;
-  const lowCount = sorted.filter((t) => t.severity === "low").length;
+  const sorted = [...activeThefts].sort((a, b) => (sortOrder[a.severity] ?? 2) - (sortOrder[b.severity] ?? 2));
 
   return (
-    <div className="space-y-3">
-      {/* Summary bar */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-xs text-white tracking-widest uppercase font-bold">
-            {sorted.length} Alert{sorted.length > 1 ? "s" : ""}
-          </span>
-        </div>
-        <div className="flex gap-2">
-          {highCount > 0 && (
-            <span className="text-xs bg-red-800 text-red-200 px-2 py-0.5 rounded-full">
-              {highCount} high
-            </span>
-          )}
-          {medCount > 0 && (
-            <span className="text-xs bg-yellow-800 text-yellow-200 px-2 py-0.5 rounded-full">
-              {medCount} med
-            </span>
-          )}
-          {lowCount > 0 && (
-            <span className="text-xs bg-blue-800 text-blue-200 px-2 py-0.5 rounded-full">
-              {lowCount} low
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Individual alerts */}
+    <div className="space-y-2">
       {sorted.map((theft) => {
-        const sev = SEVERITY_CONFIG[theft.severity] || SEVERITY_CONFIG.low;
-
+        const s = SEV[theft.severity] || SEV.low;
         return (
-          <div
-            key={theft.id}
-            className={`bg-gray-900 border ${sev.border} rounded-lg overflow-hidden`}
-          >
-            {/* Severity header */}
-            <div
-              className={`flex items-center justify-between px-4 py-2.5 ${sev.headerBg} border-b ${sev.headerBorder}`}
-            >
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${sev.dot} ${theft.severity === "high" ? "animate-pulse" : ""}`} />
-                <span className={`text-xs ${sev.labelColor} tracking-widest uppercase font-bold`}>
-                  {sev.label}
-                </span>
+          <div key={theft.id} className={`${s.bg} rounded-lg border-l-2 ${s.border} p-3`}>
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <span className="text-sm font-medium capitalize">{theft.object_class}</span>
+                <span className="text-xs text-txt-muted ml-2">#{theft.track_id}</span>
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${sev.badge}`}>
-                {theft.severity === "high" ? "ACTION REQUIRED" : "UNREVIEWED"}
-              </span>
+              <span className={`text-xs font-mono font-medium ${s.text}`}>{s.label}</span>
             </div>
 
-            <div className="p-4 space-y-3">
-              {/* Object info */}
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-sm font-bold text-white capitalize">
-                    {theft.object_class}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    Track ID #{theft.track_id}
-                  </div>
-                </div>
-              </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs mb-3">
+              <span className="text-txt-muted">Confidence</span>
+              <span className="text-right font-mono">{(theft.confidence * 100).toFixed(0)}%</span>
+              <span className="text-txt-muted">Dwell</span>
+              <span className={`text-right font-mono ${s.text}`}>{theft.dwellFrames} frames</span>
+              <span className="text-txt-muted">Time</span>
+              <span className="text-right font-mono">{new Date(theft.timestamp).toLocaleTimeString()}</span>
+            </div>
 
-              {/* Details */}
-              <div className="bg-gray-800 rounded p-2.5 space-y-1.5 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Zone</span>
-                  <span className="text-yellow-400 font-medium">BAG ZONE</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Confidence</span>
-                  <span className="text-white">{(theft.confidence * 100).toFixed(0)}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Detected</span>
-                  <span className="text-white">
-                    {new Date(theft.timestamp).toLocaleTimeString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Dwell frames</span>
-                  <span className={`font-medium ${sev.reasonText}`}>
-                    {theft.dwellFrames}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Severity score</span>
-                  <span className={`font-bold uppercase ${sev.labelColor}`}>
-                    {theft.severity}
-                  </span>
-                </div>
-              </div>
+            <div className="text-xs text-txt-muted font-mono bg-surface-0/50 rounded px-2 py-1.5 mb-3 truncate">
+              {theft.alert_reason}
+            </div>
 
-              {/* Reason */}
-              <div className={`text-xs ${sev.reasonText} rounded px-2 py-1.5 border ${sev.reasonBg}`}>
-                {theft.alert_reason}
-              </div>
-
-              {/* Action buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => onAccept(theft.id)}
-                  className="py-2 px-3 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded transition-colors"
-                >
-                  Confirm Theft
-                </button>
-                <button
-                  onClick={() => onReject(theft.id)}
-                  className="py-2 px-3 bg-green-800 hover:bg-green-700 text-green-200 text-xs font-bold rounded transition-colors"
-                >
-                  False Alarm
-                </button>
-              </div>
-              <button
-                onClick={() => onDismiss(theft.id)}
-                className="w-full py-1.5 text-xs text-gray-600 hover:text-gray-400 transition-colors"
-              >
+            <div className="flex gap-2">
+              <button onClick={() => onAccept(theft.id)} className="flex-1 text-xs py-1.5 rounded bg-accent-red/20 text-accent-red hover:bg-accent-red/30 transition-colors font-medium">
+                Confirm
+              </button>
+              <button onClick={() => onReject(theft.id)} className="flex-1 text-xs py-1.5 rounded bg-accent-green/20 text-accent-green hover:bg-accent-green/30 transition-colors font-medium">
+                False alarm
+              </button>
+              <button onClick={() => onDismiss(theft.id)} className="text-xs py-1.5 px-3 rounded text-txt-muted hover:text-txt-secondary transition-colors">
                 Dismiss
               </button>
             </div>

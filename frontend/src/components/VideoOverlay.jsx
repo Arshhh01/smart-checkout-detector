@@ -16,15 +16,15 @@ function drawPolygon(ctx, points, strokeColor, fillColor, label) {
   points.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
   ctx.closePath();
   ctx.strokeStyle = strokeColor;
-  ctx.lineWidth = 2;
-  ctx.setLineDash([6, 3]);
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([8, 4]);
   ctx.fillStyle = fillColor;
   ctx.fill();
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = strokeColor;
-  ctx.font = "bold 11px monospace";
-  ctx.fillText(label, points[0][0] + 6, points[0][1] + 16);
+  ctx.font = "500 10px 'DM Sans', sans-serif";
+  ctx.fillText(label, points[0][0] + 6, points[0][1] + 14);
 }
 
 export default function VideoOverlay({ currentFrame, isConnected }) {
@@ -34,22 +34,16 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
   const streamRef = useRef(null);
   const frameRef = useRef(currentFrame);
 
-  useEffect(() => {
-    frameRef.current = currentFrame;
-  }, [currentFrame]);
+  useEffect(() => { frameRef.current = currentFrame; }, [currentFrame]);
 
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({ video: { width: 1920, height: 1080 } })
       .then((stream) => {
         streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
-        }
+        if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
       })
       .catch((err) => console.warn("Camera not available:", err));
-
     return () => {
       if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
       if (animRef.current) cancelAnimationFrame(animRef.current);
@@ -64,69 +58,55 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
 
     function draw() {
       animRef.current = requestAnimationFrame(draw);
-
       if (video.readyState >= 2) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       } else {
-        ctx.fillStyle = "#0f172a";
+        ctx.fillStyle = "#111";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      drawPolygon(ctx, SCAN_ZONE_SCALED, "rgba(59,130,246,0.9)", "rgba(59,130,246,0.06)", "SCAN ZONE");
-      drawPolygon(ctx, BAG_ZONE_SCALED,  "rgba(234,179,8,0.9)",  "rgba(234,179,8,0.05)",  "BAG ZONE");
-
-      ctx.strokeStyle = "rgba(255,255,255,0.03)";
-      ctx.lineWidth = 1;
-      for (let gx = 0; gx < canvas.width; gx += 40) {
-        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
-      }
-      for (let gy = 0; gy < canvas.height; gy += 40) {
-        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
-      }
+      drawPolygon(ctx, SCAN_ZONE_SCALED, "rgba(49,130,206,0.7)", "rgba(49,130,206,0.04)", "Scan zone");
+      drawPolygon(ctx, BAG_ZONE_SCALED,  "rgba(214,158,46,0.7)", "rgba(214,158,46,0.04)", "Bag zone");
 
       const frame = frameRef.current;
       if (frame && frame.objects) {
         frame.objects.forEach((obj) => {
           if (!obj.bbox || obj.bbox.length < 4) return;
           const [x1, y1, x2, y2] = obj.bbox;
-          const cx1 = x1 * SCALE_X;
-          const cy1 = y1 * SCALE_Y;
-          const cw  = (x2 - x1) * SCALE_X;
-          const ch  = (y2 - y1) * SCALE_Y;
+          const cx1 = x1 * SCALE_X, cy1 = y1 * SCALE_Y;
+          const cw = (x2 - x1) * SCALE_X, ch = (y2 - y1) * SCALE_Y;
 
-          const inBag  = (frame.bag_zone_items  ?? []).includes(obj.track_id);
+          const inBag = (frame.bag_zone_items ?? []).includes(obj.track_id);
           const inScan = (frame.scan_zone_items ?? []).includes(obj.track_id);
           const isAlert = frame.is_alert && inBag;
 
-          const boxColor = isAlert ? "#ef4444" : inBag ? "#f59e0b" : inScan ? "#22c55e" : "#6b7280";
-          const bgColor  = isAlert ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)";
+          const boxColor = isAlert ? "#e53e3e" : inBag ? "#d69e2e" : inScan ? "#38a169" : "#555";
 
-          ctx.fillStyle = bgColor;
-          ctx.fillRect(cx1, cy1, cw, ch);
           ctx.strokeStyle = boxColor;
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 1.5;
           ctx.setLineDash([]);
           ctx.strokeRect(cx1, cy1, cw, ch);
 
           const label = `${obj.class} ${(obj.confidence * 100).toFixed(0)}%`;
-          ctx.font = "bold 10px monospace";
-          const lw = ctx.measureText(label).width + 8;
+          ctx.font = "500 9px 'DM Sans', sans-serif";
+          const lw = ctx.measureText(label).width + 6;
           ctx.fillStyle = boxColor;
-          ctx.fillRect(cx1, cy1 - 16, lw, 16);
+          ctx.globalAlpha = 0.85;
+          ctx.fillRect(cx1, cy1 - 14, lw, 14);
+          ctx.globalAlpha = 1;
           ctx.fillStyle = "#fff";
-          ctx.fillText(label, cx1 + 4, cy1 - 3);
+          ctx.fillText(label, cx1 + 3, cy1 - 3);
 
           if (isAlert) {
-            ctx.fillStyle = "#ef4444";
-            ctx.font = "bold 10px monospace";
-            ctx.fillText("ALERT", cx1 + 4, cy1 + ch - 4);
+            ctx.fillStyle = "rgba(229,62,62,0.15)";
+            ctx.fillRect(cx1, cy1, cw, ch);
           }
         });
       }
 
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.font = "10px monospace";
-      ctx.fillText(new Date().toLocaleTimeString(), 8, canvas.height - 8);
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.font = "9px 'JetBrains Mono', monospace";
+      ctx.fillText(new Date().toLocaleTimeString(), 8, canvas.height - 6);
     }
 
     draw();
@@ -136,18 +116,16 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
   const objCount = currentFrame?.objects?.length ?? 0;
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800">
-        <span className="text-xs text-gray-400 tracking-widest uppercase">Live Feed</span>
+    <div className="bg-surface-1 rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2">
+        <span className="text-xs text-txt-muted">Live feed</span>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500">
-            {objCount > 0 ? `${objCount} object${objCount > 1 ? "s" : ""}` : "No detections"}
+          <span className="text-xs text-txt-muted font-mono">
+            {objCount > 0 ? `${objCount} object${objCount > 1 ? "s" : ""}` : "—"}
           </span>
-          <div className="flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-red-500 animate-pulse" : "bg-gray-600"}`} />
-            <span className={`text-xs ${isConnected ? "text-red-400" : "text-gray-500"}`}>
-              {isConnected ? "REC" : "OFFLINE"}
-            </span>
+          <div className="flex items-center gap-1">
+            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-accent-red" : "bg-txt-muted"}`} />
+            <span className="text-xs text-txt-muted">{isConnected ? "Rec" : "Off"}</span>
           </div>
         </div>
       </div>
@@ -155,23 +133,11 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
       <video ref={videoRef} className="hidden" muted playsInline />
       <canvas ref={canvasRef} width={560} height={320} className="w-full" />
 
-      <div className="px-4 py-2 border-t border-gray-800 flex gap-5 text-xs text-gray-500">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block" />
-          Scan Zone
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-yellow-500 inline-block" />
-          Bag Zone
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block" />
-          Scanned
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" />
-          Alert
-        </span>
+      <div className="px-3 py-1.5 flex gap-4 text-xs text-txt-muted">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-accent-blue inline-block" /> Scan</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-accent-yellow inline-block" /> Bag</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-accent-green inline-block" /> Cleared</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-accent-red inline-block" /> Alert</span>
       </div>
     </div>
   );

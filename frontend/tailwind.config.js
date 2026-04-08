@@ -5,19 +5,31 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', '"SF Mono"', 'monospace'],
+      },
       colors: {
-        gray: {
-          950: "#000000",
-          900: "#050505",
-          800: "rgba(255, 255, 255, 0.28)",
-          700: "rgba(255, 255, 255, 0.35)",
-          600: "#cccccc",
-          500: "#d9d9d9",
-          400: "#e5e5e5",
-          300: "#efefef",
-          200: "#f5f5f5",
-          100: "#fafafa",
-          50: "#ffffff",
+        surface: {
+          0: "#0a0a0a",
+          1: "#111111",
+          2: "#181818",
+          3: "#222222",
+        },
+        line: {
+          DEFAULT: "rgba(255,255,255,0.07)",
+          strong: "rgba(255,255,255,0.12)",
+        },
+        txt: {
+          primary: "#e8e8e8",
+          secondary: "#8a8a8a",
+          muted: "#555555",
+        },
+        accent: {
+          red: "#e53e3e",
+          green: "#38a169",
+          yellow: "#d69e2e",
+          blue: "#3182ce",
         },
       },
     },
