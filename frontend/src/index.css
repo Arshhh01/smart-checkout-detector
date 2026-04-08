@@ -1,3 +1,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  * {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+@layer utilities {
+  .border {
+    border-width: 1.5px;
+  }
+  .border-b {
+    border-bottom-width: 1.5px;
+  }
+  .border-t {
+    border-top-width: 1.5px;
+  }
+  .border-l {
+    border-left-width: 1.5px;
+  }
+  .border-r {
+    border-right-width: 1.5px;
+  }
+  .border-l-2 {
+    border-left-width: 3px;
+  }
+}
