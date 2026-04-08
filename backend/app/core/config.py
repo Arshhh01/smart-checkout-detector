@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     ]
 
     # Detection thresholds
-    CONFIDENCE_THRESHOLD: float = 0.5   # YOLO min confidence to accept
+    CONFIDENCE_THRESHOLD: float = 0.35  # YOLO min confidence to accept
     ALERT_COOLDOWN_SECONDS: int = 5     # don't spam alerts for same event
     MAX_ALERTS_STORED: int = 1000       # cap DB rows
 

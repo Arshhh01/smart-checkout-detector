@@ -10,10 +10,10 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY", "change-me")
 CLOUD_API_URL = "http://localhost:8000/detections/"
 CAMERA_ID = "cam_0"
-CAMERA_INDEX = 0          # 0 = default webcam
-PUSH_EVERY_N_FRAMES = 3   # push to cloud every 3 frames (~10 pushes/sec at 30fps)
-SHOW_PREVIEW = True       # set False for headless server mode
-CONFIDENCE_THRESHOLD = 0.55  # raised from 0.4 to reduce background noise
+CAMERA_INDEX = 0         
+PUSH_EVERY_N_FRAMES = 2   # push every frame for faster cleared item detection
+SHOW_PREVIEW = True       # f for headless server mode
+CONFIDENCE_THRESHOLD = 0.35  # lowered to detect more objects
 
 # Only detect product-like objects — ignore people, furniture, background
 ALLOWED_CLASSES = {
@@ -26,7 +26,11 @@ ALLOWED_CLASSES = {
 
 # Dwell requirement — object must stay in bag zone for this many frames
 # before triggering an alert (prevents single-frame false positives)
-BAG_DWELL_REQUIRED = 8
+BAG_DWELL_REQUIRED = 3
+
+# How many frames an object stays "remembered" as scanned after leaving
+# the scan zone — prevents track ID flicker from breaking scan→bag flow
+SCAN_MEMORY_TTL = 45  # ~1.5 seconds at 30fps
 
 # Zone polygons - pixel coordinates on your camera frame
 # Adjust by running with SHOW_PREVIEW=True and noting coords
@@ -73,33 +77,50 @@ def classify_zones(tracked_objects: list) -> tuple[list, list]:
 
 
 # Track which IDs have been seen in the scan zone (memory across frames)
-seen_in_scan: set = set()  #theft detection logic starts here
+# Now uses a dict: track_id → last_frame_seen_in_scan for TTL expiry
+seen_in_scan: dict = {}  # {track_id: frame_number}
 
 # Track how many consecutive frames each suspicious ID has been in the bag zone
 bag_zone_dwell: dict = {}
+
+# Global frame counter for TTL tracking
+_frame_counter = 0
 
 
 def check_for_theft(
     scan_ids: list,
     bag_ids: list,
     tracked_objects: list,
-) -> tuple[bool, str | None]:
+) -> tuple[bool, str | None, list]:
     """
     Core theft logic:
     An item is suspicious if it appears in the bag zone
     but was NEVER seen in the scan zone first,
     AND has dwelled in the bag zone for BAG_DWELL_REQUIRED frames.
 
-    Returns (is_alert, reason_string)
+    Returns (is_alert, reason_string, scanned_items_list)
+    scanned_items_list = objects that were properly scanned before bagging
     """
-    global seen_in_scan, bag_zone_dwell
+    global seen_in_scan, bag_zone_dwell, _frame_counter
+    _frame_counter += 1
 
-    # Update scan zone memory
-    seen_in_scan.update(scan_ids)
+    # Update scan zone memory with TTL timestamp
+    for tid in scan_ids:
+        seen_in_scan[tid] = _frame_counter
+
+    # Expire old scan memories beyond TTL
+    expired = [tid for tid, frame in seen_in_scan.items()
+               if _frame_counter - frame > SCAN_MEMORY_TTL]
+    for tid in expired:
+        del seen_in_scan[tid]
+
+    # Helper to check if a track ID was scanned (exists in TTL dict)
+    def was_scanned(tid):
+        return tid in seen_in_scan
 
     # Update dwell counts for objects in bag zone that were never scanned
     for tid in bag_ids:
-        if tid not in seen_in_scan:
+        if not was_scanned(tid):
             bag_zone_dwell[tid] = bag_zone_dwell.get(tid, 0) + 1
         else:
             # Was scanned — remove from dwell tracking
@@ -114,7 +135,17 @@ def check_for_theft(
     # Only alert if object has dwelled long enough (avoids single-frame false positives)
     suspicious_ids = [
         tid for tid in bag_ids
-        if tid not in seen_in_scan and bag_zone_dwell.get(tid, 0) >= BAG_DWELL_REQUIRED
+        if not was_scanned(tid) and bag_zone_dwell.get(tid, 0) >= BAG_DWELL_REQUIRED
+    ]
+
+    # Build list of properly scanned items — in bag zone OR still in scan zone
+    cleared_ids_in_bag = [tid for tid in bag_ids if was_scanned(tid)]
+    scanned_items = [
+        {"class": obj["class"], "track_id": obj["track_id"],
+         "confidence": obj["confidence"]}
+        for obj in tracked_objects
+        if obj.get("track_id") in cleared_ids_in_bag
+        or obj.get("track_id") in scan_ids
     ]
 
     if suspicious_ids:
@@ -123,9 +154,9 @@ def check_for_theft(
             if obj.get("track_id") in suspicious_ids
         ]
         reason = f"item_in_bag_without_scan: {', '.join(set(suspicious_classes))}"
-        return True, reason
+        return True, reason, scanned_items
 
-    return False, None
+    return False, None, scanned_items
 
 
 def draw_frame(frame, tracked_objects, scan_ids, bag_ids, is_alert, fps): #visuals
@@ -229,7 +260,7 @@ def main():
         scan_ids, bag_ids = classify_zones(tracked_objects)
 
         # ── Theft detection ──────────────────────────────────────
-        is_alert, alert_reason = check_for_theft(scan_ids, bag_ids, tracked_objects)
+        is_alert, alert_reason, scanned_items = check_for_theft(scan_ids, bag_ids, tracked_objects)
 
         # ── FPS calculation ──────────────────────────────────────
         frame_count += 1
@@ -251,6 +282,7 @@ def main():
                 "bag_zone_items": bag_ids,
                 "is_alert": is_alert,
                 "alert_reason": alert_reason,
+                "scanned_items": scanned_items,
                 "inference_ms": inference_ms,
                 "fps": fps,
             }

@@ -73,7 +73,8 @@ async def save_detection(db: AsyncSession, payload: DetectionCreate) -> Detectio
             "scan_zone_items": payload.scan_zone_items,
             "bag_zone_items": payload.bag_zone_items,
             "is_alert": payload.is_alert,
-            "alert_reason": payload.alert_reason,   # ← THIS WAS MISSING
+            "alert_reason": payload.alert_reason,
+            "scanned_items": payload.scanned_items,
             "fps": payload.fps,
             "timestamp": payload.timestamp,
         }

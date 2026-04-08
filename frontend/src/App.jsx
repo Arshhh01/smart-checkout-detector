@@ -5,6 +5,8 @@ import AlertList from "./components/AlertList";
 import DetectionChart from "./components/DetectionChart";
 import VideoOverlay from "./components/VideoOverlay";
 import TheftAlertPanel from "./components/TheftAlertPanel";
+import ClearedItemsPanel from "./components/ClearedItemsPanel";
+import POSPanel from "./components/POSPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const API_KEY = import.meta.env.VITE_API_KEY || "Godofwar12";
@@ -30,6 +32,7 @@ export default function App() {
   const [detectionCount, setDetectionCount] = useState(0);
   const [alerts, setAlerts] = useState([]);
   const [activeThefts, setActiveThefts] = useState([]);
+  const [clearedItems, setClearedItems] = useState([]);
   const [fps, setFps] = useState(0);
   const [fpsHistory, setFpsHistory] = useState(
     Array.from({ length: 30 }, (_, i) => ({ time: i, fps: 0 }))
@@ -99,6 +102,26 @@ export default function App() {
       // Update detection count
       detectionCountRef.current += 1;
       setDetectionCount(detectionCountRef.current);
+
+      // Track cleared items (scanned before bagging)
+      if (data.scanned_items && data.scanned_items.length > 0) {
+        setClearedItems((prev) => {
+          const updated = [...prev];
+          for (const item of data.scanned_items) {
+            const existingIdx = updated.findIndex((c) => c.track_id === item.track_id);
+            if (existingIdx === -1) {
+              updated.unshift({
+                id: `cleared-${item.track_id}`,
+                object_class: item["class"],
+                track_id: item.track_id,
+                confidence: item.confidence,
+                timestamp: new Date().toISOString(),
+              });
+            }
+          }
+          return updated.slice(0, 20);
+        });
+      }
 
       // Handle live theft alerts
       if (data.is_alert && data.alert_reason) {
@@ -274,16 +297,30 @@ export default function App() {
         />
 
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          <div className="xl:col-span-1">
-            <div className="text-xs text-gray-500 tracking-widest uppercase mb-2 px-1">
-              Active Theft Alerts
+          <div className="xl:col-span-1 space-y-4">
+            <div>
+              <div className="text-xs text-gray-500 tracking-widest uppercase mb-2 px-1">
+                Active Theft Alerts
+              </div>
+              <TheftAlertPanel
+                activeThefts={activeThefts}
+                onAccept={handleTheftAccept}
+                onReject={handleTheftReject}
+                onDismiss={handleTheftDismiss}
+              />
             </div>
-            <TheftAlertPanel
-              activeThefts={activeThefts}
-              onAccept={handleTheftAccept}
-              onReject={handleTheftReject}
-              onDismiss={handleTheftDismiss}
-            />
+            <div>
+              <div className="text-xs text-gray-500 tracking-widest uppercase mb-2 px-1">
+                Cleared Items
+              </div>
+              <ClearedItemsPanel clearedItems={clearedItems} />
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 tracking-widest uppercase mb-2 px-1">
+                Point of Sale
+              </div>
+              <POSPanel clearedItems={clearedItems} activeThefts={activeThefts} />
+            </div>
           </div>
 
           <div className="xl:col-span-2 space-y-6">
