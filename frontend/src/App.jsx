@@ -8,6 +8,8 @@ import TheftAlertPanel from "./components/TheftAlertPanel";
 import ClearedItemsPanel from "./components/ClearedItemsPanel";
 import POSPanel from "./components/POSPanel";
 import SessionSummary from "./components/SessionSummary";
+import SystemStatus from "./components/SystemStatus";
+import ActivityFeed from "./components/ActivityFeed";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const API_KEY = import.meta.env.VITE_API_KEY || "Godofwar12";
@@ -229,7 +231,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface-0 text-txt-primary font-sans">
-      {/* Header — minimal, functional */}
       <header className="px-6 py-3 flex items-center justify-between border-b border-line">
         <div className="flex items-center gap-3">
           <div className="w-2 h-6 bg-accent-red rounded-sm" />
@@ -256,7 +257,6 @@ export default function App() {
       </header>
 
       <main className="p-5">
-        {/* Stats row */}
         <StatsCards
           detectionCount={uniqueObjectCount}
           alertCount={alerts.length}
@@ -265,10 +265,9 @@ export default function App() {
           accuracy={accuracy}
         />
 
-        {/* Main grid */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 mt-5">
-          {/* Left column — alerts + cleared + POS */}
-          <div className="xl:col-span-3 space-y-5">
+          {/* Left column */}
+          <div className="xl:col-span-3 space-y-4">
             <TheftAlertPanel
               activeThefts={activeThefts}
               onAccept={handleTheftAccept}
@@ -277,6 +276,8 @@ export default function App() {
             />
             <ClearedItemsPanel clearedItems={clearedItems} />
             <POSPanel clearedItems={clearedItems} activeThefts={activeThefts} />
+            <SystemStatus isConnected={isConnected} fps={fps} detectionCount={uniqueObjectCount} />
+            <ActivityFeed currentFrame={currentFrame} />
           </div>
 
           {/* Center — video + chart */}
