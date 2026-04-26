@@ -49,7 +49,7 @@ python backend/local_detector.py
 
 Open the [dashboard](https://smart-checkout-detector.vercel.app) to view live detections.
 
-### Run locally
+### Run locally (without the deployed servers)
 
 ```bash
 # Backend
@@ -64,6 +64,7 @@ npm install && npm run dev
 
 # Detector (separate terminal)
 cd backend && source venv/bin/activate
+# Edit CLOUD_API_URL in local_detector.py to http://localhost:8000/detections/
 python local_detector.py
 ```
 
