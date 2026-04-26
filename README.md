@@ -2,21 +2,24 @@
 
 Real-time AI-powered theft detection system for retail self-checkout stations.
 
--> Overview
+## Overview
 
 SCD uses YOLOv8 object detection with ByteTrack multi-object tracking to monitor self-checkout lanes via a standard webcam. The system detects skip-scanning — when items are placed in the bagging area without being scanned first — and surfaces severity-tiered alerts on a live web dashboard.
 
 **Live Dashboard:** [smart-checkout-detector.vercel.app](https://smart-checkout-detector.vercel.app)  
-**API Docs:** [smart-checkout-detector.onrender.com](https://smart-checkout-detector.onrender.com)
+**API Docs:** [smart-checkout-detector.onrender.com/docs](https://smart-checkout-detector.onrender.com/docs)
 
-Architecture
+## Architecture
+
+```
 ┌─────────────────┐     HTTPS POST      ┌──────────────────┐     WebSocket      ┌─────────────────┐
 │  Edge Detector   │ ──────────────────> │  FastAPI Backend  │ ────────────────> │ React Dashboard  │
 │  (local_detector │     /detections/    │  (Render)         │     /ws/          │ (Vercel)         │
 │   .py + YOLOv8)  │                    │  SQLite + WS      │                   │ Live monitoring  │
 └─────────────────┘                     └──────────────────┘                    └─────────────────┘
+```
 
--> Features
+## Features
 
 - **Real-time object detection** — YOLOv8-Nano at 14+ FPS on consumer hardware
 - **Zone-based classification** — Configurable scan zone and bag zone polygons
