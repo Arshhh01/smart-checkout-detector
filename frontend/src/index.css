@@ -7,7 +7,7 @@
 @layer base {
   body {
     background: #0a0a0a;
-    color: #e8e8e8;
+    color: #f0f0f0;
     font-family: 'DM Sans', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
