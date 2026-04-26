@@ -164,6 +164,30 @@ export default function App() {
         if (!alertedTrackIdsRef.current.has(trackId)) {
           alertedTrackIdsRef.current.add(trackId);
           setAlerts((prev) => [{ id: `live-${trackId}-${Date.now()}`, timestamp: parseTimestamp(data.timestamp), object_class: objClass, confidence: newConfidence, track_id: trackId, zone: "bag", bbox: data.objects?.[0]?.bbox ?? [0, 0, 50, 50], is_alert: true, alert_reason: data.alert_reason, severity: newSeverity, review_status: "unreviewed" }, ...prev].slice(0, 100));
+          // Audio alert for new theft detections
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = newSeverity === "high" ? 880 : newSeverity === "medium" ? 660 : 440;
+            gain.gain.value = 0.15;
+            osc.start();
+            osc.stop(ctx.currentTime + (newSeverity === "high" ? 0.4 : 0.2));
+            if (newSeverity === "high") {
+              setTimeout(() => {
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.frequency.value = 880;
+                gain2.gain.value = 0.15;
+                osc2.start();
+                osc2.stop(ctx.currentTime + 0.3);
+              }, 300);
+            }
+          } catch (e) { /* audio not available */ }
         } else {
           setAlerts((prev) => prev.map((a) => {
             if (a.track_id === trackId && a.review_status === "unreviewed") {
