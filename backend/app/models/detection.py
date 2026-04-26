@@ -1,6 +1,4 @@
-"""
-Detection - one row per YOLO inference frame pushed from local detector.
-"""
+
 
 from sqlalchemy import Column, Integer, Float, String, Boolean, DateTime, JSON
 from sqlalchemy.sql import func

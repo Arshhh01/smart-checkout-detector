@@ -1,16 +1,9 @@
-"""
-Pydantic schemas for request/response validation.
-These are what the API accepts and returns - separate from DB models.
-"""
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
-
-# ─────────────────────────────────────────────
 # Detection schemas
-# ─────────────────────────────────────────────
 
 class DetectedObject(BaseModel):
     """Single YOLO detection result."""
@@ -53,10 +46,7 @@ class DetectionResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
-
-# ─────────────────────────────────────────────
 # Alert schemas
-# ─────────────────────────────────────────────
 
 class AlertCreate(BaseModel):
     camera_id: str = "cam_0"
@@ -88,9 +78,7 @@ class AlertResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ─────────────────────────────────────────────
 # Stats schema
-# ─────────────────────────────────────────────
 
 class StatsResponse(BaseModel):
     total_detections: int
@@ -103,9 +91,7 @@ class StatsResponse(BaseModel):
     active_ws_connections: int
 
 
-# ─────────────────────────────────────────────
 # WebSocket message schema
-# ─────────────────────────────────────────────
 
 class WSMessage(BaseModel):
     """Shape of every message pushed to dashboard browsers."""

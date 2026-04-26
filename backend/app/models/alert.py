@@ -1,7 +1,4 @@
-"""
-Alert - created when zone logic flags a theft event.
-One alert can span many detection frames (same incident).
-"""
+
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON, Float
 from sqlalchemy.sql import func
