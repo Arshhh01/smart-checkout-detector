@@ -13,11 +13,10 @@ CLOUD_API_URL = "https://smart-checkout-detector.onrender.com/detections/"
 CAMERA_ID = "cam_0"
 CAMERA_INDEX = 0          # 0 = default webcam
 PUSH_EVERY_N_FRAMES = 1   # push every frame for faster cleared item detection
-SHOW_PREVIEW = True       # set False for headless server mode
-CONFIDENCE_THRESHOLD = 0.35  # lowered to detect more objects
+SHOW_PREVIEW = True       # false for headless server mode
+CONFIDENCE_THRESHOLD = 0.35 
 
-# Only detect product-like objects — ignore people, furniture, background
-ALLOWED_CLASSES = {
+ALLOWED_CLASSES = {  # Only detect product-like objects — ignore people, furniture, background
     "bottle", "cup", "bowl", "book", "cell phone", "laptop",
     "mouse", "keyboard", "scissors", "toothbrush", "hair drier",
     "apple", "orange", "banana", "sandwich", "cake", "donut",
