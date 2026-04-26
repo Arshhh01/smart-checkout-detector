@@ -23,8 +23,8 @@ function drawPolygon(ctx, points, strokeColor, fillColor, label) {
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = strokeColor;
-  ctx.font = "500 10px 'DM Sans', sans-serif";
-  ctx.fillText(label, points[0][0] + 6, points[0][1] + 14);
+  ctx.font = "500 11px 'DM Sans', sans-serif";
+  ctx.fillText(label, points[0][0] + 6, points[0][1] + 16);
 }
 
 export default function VideoOverlay({ currentFrame, isConnected }) {
@@ -65,8 +65,8 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      drawPolygon(ctx, SCAN_ZONE_SCALED, "rgba(49,130,206,0.7)", "rgba(49,130,206,0.04)", "Scan zone");
-      drawPolygon(ctx, BAG_ZONE_SCALED,  "rgba(214,158,46,0.7)", "rgba(214,158,46,0.04)", "Bag zone");
+      drawPolygon(ctx, SCAN_ZONE_SCALED, "rgba(59,130,246,0.8)", "rgba(59,130,246,0.05)", "Scan zone");
+      drawPolygon(ctx, BAG_ZONE_SCALED,  "rgba(234,179,8,0.8)", "rgba(234,179,8,0.05)", "Bag zone");
 
       const frame = frameRef.current;
       if (frame && frame.objects) {
@@ -80,33 +80,33 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
           const inScan = (frame.scan_zone_items ?? []).includes(obj.track_id);
           const isAlert = frame.is_alert && inBag;
 
-          const boxColor = isAlert ? "#e53e3e" : inBag ? "#d69e2e" : inScan ? "#38a169" : "#555";
+          const boxColor = isAlert ? "#ef4444" : inBag ? "#eab308" : inScan ? "#22c55e" : "#666";
 
           ctx.strokeStyle = boxColor;
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 2;
           ctx.setLineDash([]);
           ctx.strokeRect(cx1, cy1, cw, ch);
 
           const label = `${obj.class} ${(obj.confidence * 100).toFixed(0)}%`;
-          ctx.font = "500 9px 'DM Sans', sans-serif";
-          const lw = ctx.measureText(label).width + 6;
+          ctx.font = "600 10px 'DM Sans', sans-serif";
+          const lw = ctx.measureText(label).width + 8;
           ctx.fillStyle = boxColor;
-          ctx.globalAlpha = 0.85;
-          ctx.fillRect(cx1, cy1 - 14, lw, 14);
+          ctx.globalAlpha = 0.9;
+          ctx.fillRect(cx1, cy1 - 16, lw, 16);
           ctx.globalAlpha = 1;
           ctx.fillStyle = "#fff";
-          ctx.fillText(label, cx1 + 3, cy1 - 3);
+          ctx.fillText(label, cx1 + 4, cy1 - 4);
 
           if (isAlert) {
-            ctx.fillStyle = "rgba(229,62,62,0.15)";
+            ctx.fillStyle = "rgba(239,68,68,0.12)";
             ctx.fillRect(cx1, cy1, cw, ch);
           }
         });
       }
 
-      ctx.fillStyle = "rgba(255,255,255,0.35)";
-      ctx.font = "9px 'JetBrains Mono', monospace";
-      ctx.fillText(new Date().toLocaleTimeString(), 8, canvas.height - 6);
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.font = "10px 'JetBrains Mono', monospace";
+      ctx.fillText(new Date().toLocaleTimeString(), 8, canvas.height - 8);
     }
 
     draw();
@@ -116,16 +116,16 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
   const objCount = currentFrame?.objects?.length ?? 0;
 
   return (
-    <div className="bg-surface-1 rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-xs text-txt-muted">Live feed</span>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-txt-muted font-mono">
-            {objCount > 0 ? `${objCount} object${objCount > 1 ? "s" : ""}` : "—"}
+    <div className="bg-surface-1 border border-line rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2.5">
+        <span className="text-sm text-txt-secondary font-medium">Live feed</span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-txt-secondary font-mono">
+            {objCount > 0 ? `${objCount} object${objCount > 1 ? "s" : ""}` : "\u2014"}
           </span>
-          <div className="flex items-center gap-1">
-            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-accent-red" : "bg-txt-muted"}`} />
-            <span className="text-xs text-txt-muted">{isConnected ? "Rec" : "Off"}</span>
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-accent-red animate-pulse" : "bg-txt-muted"}`} />
+            <span className="text-sm text-txt-secondary">{isConnected ? "Rec" : "Off"}</span>
           </div>
         </div>
       </div>
@@ -133,11 +133,11 @@ export default function VideoOverlay({ currentFrame, isConnected }) {
       <video ref={videoRef} className="hidden" muted playsInline />
       <canvas ref={canvasRef} width={560} height={320} className="w-full" />
 
-      <div className="px-3 py-1.5 flex gap-4 text-xs text-txt-muted">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-accent-blue inline-block" /> Scan</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-accent-yellow inline-block" /> Bag</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-accent-green inline-block" /> Cleared</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-accent-red inline-block" /> Alert</span>
+      <div className="px-4 py-2 flex gap-5 text-sm text-txt-secondary">
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500 inline-block" /> Scan</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-yellow-500 inline-block" /> Bag</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block" /> Cleared</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block" /> Alert</span>
       </div>
     </div>
   );

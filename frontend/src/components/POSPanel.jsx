@@ -26,27 +26,27 @@ export default function POSPanel({ clearedItems, activeThefts }) {
   const lostRevenue = theftItems.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <div className="bg-surface-1 rounded-lg overflow-hidden">
-      <div className="px-3 py-2 flex items-center justify-between border-b border-line">
-        <span className="text-xs text-txt-muted">Receipt</span>
-        <span className="text-xs text-txt-muted font-mono">{new Date().toLocaleDateString()}</span>
+    <div className="bg-surface-1 border border-line rounded-xl overflow-hidden">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-line">
+        <span className="text-sm text-txt-secondary font-medium">Receipt</span>
+        <span className="text-sm text-txt-muted font-mono">{new Date().toLocaleDateString()}</span>
       </div>
 
       <div className="divide-y divide-line">
         {allItems.length === 0 ? (
-          <div className="p-3 text-center text-xs text-txt-muted">No items</div>
+          <div className="p-4 text-center text-sm text-txt-muted">No items</div>
         ) : (
           allItems.map((item) => (
-            <div key={item.id} className={`px-3 py-1.5 flex items-center justify-between ${item.status === "unscanned" ? "bg-accent-red/5" : ""}`}>
+            <div key={item.id} className={`px-4 py-2.5 flex items-center justify-between ${item.status === "unscanned" ? "bg-red-500/5" : ""}`}>
               <div className="flex items-center gap-2">
-                {item.status === "unscanned" && <span className="text-accent-red text-xs">!</span>}
-                <span className="text-sm capitalize">{item.name}</span>
+                {item.status === "unscanned" && <span className="text-accent-red text-sm font-bold">!</span>}
+                <span className="text-sm text-white capitalize font-medium">{item.name}</span>
                 <span className="text-xs text-txt-muted font-mono">#{item.track_id}</span>
               </div>
               {item.status === "unscanned" ? (
-                <span className="text-xs text-accent-red font-mono">not scanned</span>
+                <span className="text-sm text-accent-red font-mono">not scanned</span>
               ) : (
-                <span className="text-sm font-mono">${item.price.toFixed(2)}</span>
+                <span className="text-sm text-white font-mono font-medium">${item.price.toFixed(2)}</span>
               )}
             </div>
           ))
@@ -54,23 +54,23 @@ export default function POSPanel({ clearedItems, activeThefts }) {
       </div>
 
       {lineItems.length > 0 && (
-        <div className="border-t border-line px-3 py-2 space-y-1">
-          <div className="flex justify-between text-xs text-txt-muted">
+        <div className="border-t border-line px-4 py-3 space-y-1.5">
+          <div className="flex justify-between text-sm text-txt-secondary">
             <span>Subtotal</span><span className="font-mono">${subtotal.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-xs text-txt-muted">
+          <div className="flex justify-between text-sm text-txt-secondary">
             <span>Tax 6.25%</span><span className="font-mono">${tax.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm font-medium pt-1 border-t border-line">
+          <div className="flex justify-between text-base font-semibold text-white pt-2 border-t border-line">
             <span>Total</span><span className="font-mono">${total.toFixed(2)}</span>
           </div>
         </div>
       )}
 
       {theftItems.length > 0 && (
-        <div className="border-t border-line px-3 py-2 bg-accent-red/5 flex justify-between">
-          <span className="text-xs text-accent-red">Potential loss</span>
-          <span className="text-sm text-accent-red font-mono font-medium">${lostRevenue.toFixed(2)}</span>
+        <div className="border-t border-line px-4 py-3 bg-red-500/5 flex justify-between">
+          <span className="text-sm text-accent-red font-medium">Potential loss</span>
+          <span className="text-base text-accent-red font-mono font-bold">${lostRevenue.toFixed(2)}</span>
         </div>
       )}
     </div>
