@@ -40,7 +40,7 @@ SCD uses YOLOv8 object detection with ByteTrack multi-object tracking to monitor
 
 ## Quick Start
 
-### Run the detector
+### Run the detector (after cloning this repo and pip install -requirements)
 
 ```bash
 pip install ultralytics opencv-python requests numpy python-dotenv
