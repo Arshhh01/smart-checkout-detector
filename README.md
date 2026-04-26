@@ -9,8 +9,7 @@ SCD uses YOLOv8 object detection with ByteTrack multi-object tracking to monitor
 **Live Dashboard:** [smart-checkout-detector.vercel.app](https://smart-checkout-detector.vercel.app)  
 **API Docs:** [smart-checkout-detector.onrender.com](https://smart-checkout-detector.onrender.com)
 
--> Architecture
-
+Architecture
 ┌─────────────────┐     HTTPS POST      ┌──────────────────┐     WebSocket      ┌─────────────────┐
 │  Edge Detector   │ ──────────────────> │  FastAPI Backend  │ ────────────────> │ React Dashboard  │
 │  (local_detector │     /detections/    │  (Render)         │     /ws/          │ (Vercel)         │
