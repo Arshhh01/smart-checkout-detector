@@ -1,14 +1,14 @@
 # Smart Checkout Detector (SCD)
 
-Real-time AI-powered theft detection system for retail self-checkout stations.
+Real-time AI-powered theft detection system for retail self-checkout stations
 
-## Overview
+=> Overview
 SCD uses YOLOv8 object detection with ByteTrack multi-object tracking to monitor self-checkout lanes via a standard webcam. The system detects skip-scanning — when items are placed in the bagging area without being scanned first — and surfaces severity-tiered alerts on a live web dashboard.
 
 **Live Dashboard:** [smart-checkout-detector.vercel.app](https://smart-checkout-detector.vercel.app)  
 **API Docs:** [smart-checkout-detector.onrender.com](https://smart-checkout-detector.onrender.com)
 
-## Architecture
+=> Architecture
 
 ```
 ┌─────────────────┐     HTTPS POST      ┌──────────────────┐     WebSocket      ┌─────────────────┐
@@ -18,7 +18,7 @@ SCD uses YOLOv8 object detection with ByteTrack multi-object tracking to monitor
 └─────────────────┘                     └──────────────────┘                    └─────────────────┘
 ```
 
-## Features
+=> Features
 
 - **Real-time object detection** — YOLOv8-Nano at 14+ FPS on consumer hardware
 - **Zone-based classification** — Configurable scan zone and bag zone polygons
@@ -29,7 +29,7 @@ SCD uses YOLOv8 object detection with ByteTrack multi-object tracking to monitor
 - **Alert deduplication** — One escalating alert per tracked object
 - **Cloud deployed** — Backend on Render, frontend on Vercel, detector on edge
 
-## Tech Stack
+-> Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -38,9 +38,9 @@ SCD uses YOLOv8 object detection with ByteTrack multi-object tracking to monitor
 | Frontend | React 18, Vite, Tailwind CSS |
 | Deployment | Render (backend), Vercel (frontend) |
 
-## Quick Start
+-> Quick Start
 
-### Run the detector (after cloning local.detector.py)
+-> Run the detector (after cloning local.detector.py)
 
 ```bash
 pip install ultralytics opencv-python requests numpy python-dotenv
@@ -49,7 +49,7 @@ python backend/local_detector.py
 
 Open the [dashboard](https://smart-checkout-detector.vercel.app) to view live detections.
 
-### Run locally (without the deployed servers)
+--> Run locally (without the deployed servers)
 
 ```bash
 # Backend
@@ -68,7 +68,7 @@ cd backend && source venv/bin/activate
 python local_detector.py
 ```
 
-## Project Structure
+-> Project Structure
 
 ```
 smart-checkout-detector/
@@ -90,7 +90,7 @@ smart-checkout-detector/
 └── README.md
 ```
 
-## How It Works
+-> How It Works
 
 1. Items pass through the **scan zone** (left) before the **bag zone** (right) → marked as **cleared**
 2. Items that enter the bag zone without scanning → **theft alert** fires after dwell threshold
