@@ -95,14 +95,3 @@ smart-checkout-detector/
 1. Items pass through the **scan zone** (left) before the **bag zone** (right) → marked as **cleared**
 2. Items that enter the bag zone without scanning → **theft alert** fires after dwell threshold
 3. Alerts escalate from low → medium → high as dwell time and confidence increase
-
-## API
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /detections/ | Push detection frame (API key required) |
-| GET | /alerts/ | List alerts |
-| PATCH | /alerts/{id}/review | Review alert |
-| GET | /stats/ | System statistics |
-| GET | /health | Health check |
-| WS | /ws/ | Live dashboard WebSocket |
