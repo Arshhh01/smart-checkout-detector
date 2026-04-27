@@ -49,7 +49,7 @@ python backend/local_detector.py
 
 Open the [dashboard](https://smart-checkout-detector.vercel.app) to view live detections.
 
---> Run locally (without the deployed servers)
+--> Run locally (without the deployed servers after cloning the repository)
 
 ```bash
 # Backend
